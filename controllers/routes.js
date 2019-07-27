@@ -33,10 +33,44 @@ module.exports = function (app) {
         res.send("scrape complete")
     })
 
-
+    // get all articles from db
     app.get("/articles", (req, res) => {
         db.Article.find({})
             .then(dbArticle => res.json(dbArticle))
             .catch(err => console.log(err))
+    })
+
+    // get article by id
+    app.get("/articles/:id", function (req, res) {
+        db.Article.findOne({ "_id": req.params.id })
+            .populate("note")
+            .exec(function (err, doc) {
+                if (err) {
+                    console.log(err)
+                } else {
+                    res.json(doc)
+                }
+            })
+    })
+
+    // save note for article by id
+    app.post("/articles/:id", function (req, res) {
+        const newNote = new newNote(req.body);
+
+        newNote.save(function (err, doc) {
+            if (err) {
+                console.log(err)
+            } else {
+                db.Article.findOneAndUpdate({ "_id": req.params.id }, { "note": doc._id })
+                    .exec(function (err, doc) {
+                        if (err) {
+                            console.log(err);
+                        }
+                        else {
+                            res.send(doc);
+                        }
+                    })
+            }
+        })
     })
 }
